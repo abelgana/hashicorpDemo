@@ -1,0 +1,12 @@
+{
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Principal": {
+                "AWS": "arn:aws:iam::283842097881:user/terraform-provisioner"
+            },
+            "Action": "s3:*",
+            "Resource": "arn:aws:s3:::terraform-backend-store-test"
+        }
+    ]
+}
