@@ -38,69 +38,61 @@ pipeline {
         }
       }
     }
-    stage('Infrastructure Planning') {
+    stage('Infrastructure') {
       agent {
         docker {
           image 'abelgana/terraformbuilder:1.0.1'
           args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
       }
-      steps {
-          dir ('infra') {
-            echo 'Provisioning....'
-            sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
-            sh 'terraform plan \
-                -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
-                -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
-                -out=plan'
+      stages {
+        stage('Infrastructure Planning') {
+          steps {
+            dir ('infra') {
+              echo 'Planning....'
+              sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
+              sh 'terraform plan \
+                  -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
+                  -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+                  -out=plan'
+            }
           }
-      }
-    }
-    stage('Infrastructure Provisioning') {
-      when {
-        environment name: 'DEPLOY', value: 'true'
-      }
-      input {
-        message "Deploy to production?"
-        id "DEPLOY"
-        parameters { booleanParam(name: 'DEPLOY', defaultValue: false, description: '') }
-      }
-      agent {
-        docker {
-          image 'abelgana/terraformbuilder:1.0.1'
-          args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
-      }
-      steps {
-        dir ('infra') {
-          echo 'provisioning....'
-          sh 'terraform apply plan'
+        stage('Infrastructure Provisioning') {
+          when {
+            environment name: 'DEPLOY', value: 'true'
+          }
+          input {
+            message "Deploy to production?"
+            id "DEPLOY"
+            parameters { booleanParam(name: 'DEPLOY', defaultValue: false, description: '') }
+          }
+          steps {
+            dir ('infra') {
+              echo 'provisioning....'
+              sh 'terraform apply plan'
+            }
+          }
         }
-      }
-    }
 
-    stage('Infrastructure Destruction') {
-      when {
-        environment name: 'DESTROY', value: 'true'
-      }
-      input {
-        message "Destroy to production?"
-        id "DESTROY"
-        parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
-      }
-      agent {
-        docker {
-          image 'abelgana/terraformbuilder:1.0.1'
-          args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
-        }
-      }
-      steps {
-        dir ('infra') {
-          echo 'destroying....'
-          sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
-          sh 'terraform destroy -auto-approve \
-              -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
-              -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET'
+        stage('Infrastructure Destruction') {
+          when {
+            environment name: 'DESTROY', value: 'true'
+          }
+          input {
+            message "Destroy to production?"
+            id "DESTROY"
+            parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
+          }
+          steps {
+            dir ('infra') {
+              echo 'destroying....'
+              sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
+              sh 'terraform destroy -auto-approve \
+                  -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
+                  -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET'
+            }
+          }
         }
       }
     }
