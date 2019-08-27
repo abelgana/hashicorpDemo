@@ -10,8 +10,9 @@ pipeline {
     ARM_CLIENT_ID = credentials('ARM_CLIENT_ID')
     ARM_TENANT_ID = credentials('ARM_TENANT_ID')
     ARM_SUBSCRIPTION_ID = credentials('ARM_SUBSCRIPTION_ID')
-    AWS_ACCESS_KEY_ID= credentials('AWS_ACCESS_KEY_ID')
-    AWS_SECRET_ACCESS_KEY= credentials ('AWS_SECRET_ACCESS_KEY')
+    AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
+    AWS_SECRET_ACCESS_KEY = credentials ('AWS_SECRET_ACCESS_KEY')
+    DOCKER_HUB_CREDS = credentials('DOCKER_HUB_CREDS')
   }
 
   stages {
@@ -25,9 +26,15 @@ pipeline {
       steps {
         dir("app") {
           echo 'Building....'
-          // sh 'bazel build hashicorpdemo'
-          echo 'Testing....'
-          // sh 'bazel test'
+          // sh 'tag=$(git rev-parse HEAD:app) && \
+          //     bazel build generated/go-server:push_go_server_image \
+          //     --define tag=${tag} \
+          //     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+          //     --host_force_python=PY2 && \
+          //     docker login \
+          //         -u ${DOCKER_HUB_CREDS_USR} \
+          //         -p ${DOCKER_HUB_CREDS_PSW} && \
+          //     bazel-bin/generated/go-server/push_go_server_image'
         }
       }
     }
@@ -49,14 +56,15 @@ pipeline {
           }
       }
     }
-    stage('Infrastructure Provisioning Approval') {
-      steps {
-        script {
-          def userInput = input(id: 'apply', message: 'Apply the planned deployment?', parameters: [ [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'If true terraform apply will be run', name: 'apply'] ])
-        }
-      }
-    }
     stage('Infrastructure Provisioning') {
+      when {
+        environment name: 'DEPLOY', value: 'true'
+      }
+      input {
+        message "Deploy to production?"
+        id "DEPLOY"
+        parameters { booleanParam(name: 'DEPLOY', defaultValue: false, description: '') }
+      }
       agent {
         docker {
           image 'abelgana/terraformbuilder:1.0.1'
@@ -66,19 +74,20 @@ pipeline {
       steps {
         dir ('infra') {
           echo 'provisioning....'
-          sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
           sh 'terraform apply plan'
         }
       }
     }
-    stage('Infrastructure Destruction Approval') {
-      steps {
-        script {
-          def userInput = input(id: 'destroy', message: 'Destroy the provisionned deployment?', parameters: [ [$class: 'BooleanParameterDefinition', defaultValue: false, description: 'If true terraform destroy will be run', name: 'destroy'] ])
-        }
+
+    stage('Infrastructure Destruction') {
+      when {
+        environment name: 'DESTROY', value: 'true'
       }
-    }
-        stage('Infrastructure Destruction') {
+      input {
+        message "Destroy to production?"
+        id "DESTROY"
+        parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
+      }
       agent {
         docker {
           image 'abelgana/terraformbuilder:1.0.1'
@@ -87,7 +96,7 @@ pipeline {
       }
       steps {
         dir ('infra') {
-          echo 'provisioning....'
+          echo 'destroying....'
           sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
           sh 'terraform destroy -auto-approve \
               -var ARM_CLIENT_ID=$ARM_CLIENT_ID \

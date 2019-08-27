@@ -1,0 +1,21 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "api_default.go",
+        "initDb.go",
+        "logger.go",
+        "model_people.go",
+        "model_person.go",
+        "model_person_data.go",
+        "routers.go",
+    ],
+    importpath = "github.com/abelgana/hashicorpdemo/generated/go-server/go",
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_github_gorilla_mux//:go_default_library",
+        "@com_github_jinzhu_gorm//:go_default_library",
+        "@com_github_jinzhu_gorm//dialects/postgres:go_default_library",
+    ],
+)

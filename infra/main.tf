@@ -3,15 +3,6 @@ provider "azurerm" {
   version = "=1.28.0"
 }
 
-terraform {
-    backend "s3" {
-        bucket  = "terraform-backend-store-test"
-        encrypt = true
-        key     = "terraform.tfstate"
-        region  = "eu-west-1"
-    }
-}
-
 # Create Azure resource group.
 resource "azurerm_resource_group" "hashicorp_demo" {
   name     = "${var.prefix}-aks-hashicorp-demo"

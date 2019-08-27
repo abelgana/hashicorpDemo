@@ -1,0 +1,143 @@
+---
+swagger: "2.0"
+info:
+  version: "1.0"
+  title: "Titanic"
+consumes:
+- "application/json"
+paths:
+  /people:
+    get:
+      summary: "Get a list of all people"
+      operationId: "people.list"
+      produces:
+      - "application/json"
+      - "text/html"
+      parameters: []
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/People"
+    post:
+      summary: "Add a person to the database"
+      operationId: "people.add"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "person"
+        required: true
+        schema:
+          $ref: "#/definitions/PersonData"
+        x-exportParamName: "Person"
+      responses:
+        200:
+          description: "Added"
+          schema:
+            $ref: "#/definitions/Person"
+  /people/{uuid}:
+    get:
+      summary: "Get information about one person"
+      operationId: "person.get"
+      produces:
+      - "application/json"
+      - "text/html"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        required: true
+        type: "string"
+        format: "uuid"
+        x-exportParamName: "Uuid"
+      responses:
+        200:
+          description: "OK"
+          schema:
+            $ref: "#/definitions/Person"
+        404:
+          description: "Not found"
+    put:
+      summary: "Update information about one person"
+      operationId: "person.update"
+      produces:
+      - "application/json"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        required: true
+        type: "string"
+        format: "uuid"
+        x-exportParamName: "Uuid"
+      - in: "body"
+        name: "person"
+        required: true
+        schema:
+          $ref: "#/definitions/PersonData"
+        x-exportParamName: "Person"
+      responses:
+        200:
+          description: "Updated"
+          schema:
+            $ref: "#/definitions/Person"
+        404:
+          description: "Not found"
+    delete:
+      summary: "Delete this person"
+      operationId: "person.delete"
+      parameters:
+      - name: "uuid"
+        in: "path"
+        required: true
+        type: "string"
+        format: "uuid"
+        x-exportParamName: "Uuid"
+      responses:
+        200:
+          description: "OK"
+        404:
+          description: "Not found"
+definitions:
+  People:
+    type: "array"
+    items:
+      $ref: "#/definitions/Person"
+  Person:
+    allOf:
+    - $ref: "#/definitions/PersonData"
+    - type: "object"
+      properties:
+        uuid:
+          type: "string"
+          format: "uuid"
+  PersonData:
+    properties:
+      survived:
+        type: "boolean"
+      passengerClass:
+        type: "integer"
+      name:
+        type: "string"
+      sex:
+        type: "string"
+        enum:
+        - "male"
+        - "female"
+        - "other"
+      age:
+        type: "integer"
+      siblingsOrSpousesAboard:
+        type: "integer"
+      parentsOrChildrenAboard:
+        type: "integer"
+      fare:
+        type: "number"
+    example:
+      fare: 5.63737665663332876420099637471139430999755859375
+      sex: "male"
+      name: "name"
+      survived: true
+      passengerClass: 0
+      siblingsOrSpousesAboard: 1
+      age: 6
+      parentsOrChildrenAboard: 5

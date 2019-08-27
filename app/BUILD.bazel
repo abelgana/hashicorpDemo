@@ -1,18 +1,4 @@
-load("@io_bazel_rules_go//go:def.bzl", "go_binary", "go_library")
 load("@bazel_gazelle//:def.bzl", "gazelle")
 
 # gazelle:prefix github.com/abelgana/hashicorpdemo
 gazelle(name = "gazelle")
-
-go_library(
-    name = "go_default_library",
-    srcs = ["main.go"],
-    importpath = "github.com/abelgana/hashicorpdemo",
-    visibility = ["//visibility:private"],
-)
-
-go_binary(
-    name = "hashicorpdemo",
-    embed = [":go_default_library"],
-    visibility = ["//visibility:public"],
-)
