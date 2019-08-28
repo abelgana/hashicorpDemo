@@ -1,34 +1,19 @@
-# Specify azure provider
-provider "azurerm" {
-  version = "=1.28.0"
+module "aks" {
+  source = "./aks"
+
+  ARM_CLIENT_ID     = "${var.ARM_CLIENT_ID}"
+  ARM_CLIENT_SECRET = "${var.ARM_CLIENT_SECRET}"
 }
 
-# Create Azure resource group.
-resource "azurerm_resource_group" "hashicorp_demo" {
-  name     = "${var.prefix}-aks-hashicorp-demo"
-  location = "${var.region}"
-}
+module "postgres" {
+  source = "./postgres"
 
-resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
-  name                = "${var.prefix}-aks-hashicorp-demo"
-  location            = "${azurerm_resource_group.hashicorp_demo.location}"
-  resource_group_name = "${azurerm_resource_group.hashicorp_demo.name}"
-  dns_prefix          = "${var.prefix}-hashicorp-demo"
-
-  agent_pool_profile {
-    name            = "default"
-    count           = 1
-    vm_size         = "Standard_D1_v2"
-    os_type         = "Linux"
-    os_disk_size_gb = 30
-  }
-
-  service_principal {
-    client_id     = "${var.ARM_CLIENT_ID}"
-    client_secret = "${var.ARM_CLIENT_SECRET}"
-  }
-
-  tags = {
-    Environment = "Dev"
-  }
+  client_key = "${module.aks.client_key }"
+  client_certificate = "${module.aks.client_certificate}"
+  cluster_ca_certificate =  "${module.aks.cluster_ca_certificate}"
+  host = "${module.aks.host}"
+  arm_client_id     = "${var.ARM_CLIENT_ID}"
+  arm_client_secret = "${var.ARM_CLIENT_SECRET}"
+  arm_subscription_id = "${var.ARM_SUBSCRIPTION_ID}"
+  arm_tenant_id = "${var.ARM_TENANT_ID}"
 }
