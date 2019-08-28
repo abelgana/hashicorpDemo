@@ -23,18 +23,26 @@ pipeline {
           args '--entrypoint=\'\''
         }
       }
+      when {
+        environment name: 'PACKAGE', value: 'true'
+      }
+      input {
+        message "Package applicaiton?"
+        id "PACKAGE"
+        parameters { booleanParam(name: 'PACKAGE', defaultValue: false, description: '') }
+      }
       steps {
         dir("app") {
           echo 'Building....'
-          // sh 'tag=$(git rev-parse HEAD:app) && \
-          //     bazel build generated/go-server:push_go_server_image \
-          //     --define tag=${tag} \
-          //     --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-          //     --host_force_python=PY2 && \
-          //     docker login \
-          //         -u ${DOCKER_HUB_CREDS_USR} \
-          //         -p ${DOCKER_HUB_CREDS_PSW} && \
-          //     bazel-bin/generated/go-server/push_go_server_image'
+          sh 'tag=$(git rev-parse HEAD:app) && \
+              bazel build generated/go-server:push_go_server_image \
+              --define tag=${tag} \
+              --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+              --host_force_python=PY2 && \
+              docker login \
+                  -u ${DOCKER_HUB_CREDS_USR} \
+                  -p ${DOCKER_HUB_CREDS_PSW} && \
+              bazel-bin/generated/go-server/push_go_server_image'
         }
       }
     }
