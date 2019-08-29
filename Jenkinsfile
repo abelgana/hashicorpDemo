@@ -62,6 +62,8 @@ pipeline {
               sh 'terraform plan \
                   -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
                   -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+                  -var ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+                  -var ARM_TENANT_ID=$ARM_TENANT_ID \
                   -out=plan'
             }
           }
@@ -82,25 +84,26 @@ pipeline {
             }
           }
         }
-
-        stage('Infrastructure Destruction') {
-          when {
-            environment name: 'DESTROY', value: 'true'
-          }
-          input {
-            message "Destroy to production?"
-            id "DESTROY"
-            parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
-          }
-          steps {
-            dir ('infra') {
-              echo 'destroying....'
-              sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
-              sh 'terraform destroy -auto-approve \
-                  -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
-                  -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET'
-            }
-          }
+      }
+    }
+    stage('Infrastructure Destruction') {
+      when {
+        environment name: 'DESTROY', value: 'true'
+      }
+      input {
+        message "Destroy to production?"
+        id "DESTROY"
+        parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
+      }
+      steps {
+        dir ('infra') {
+          echo 'destroying....'
+          sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
+          sh 'terraform destroy -auto-approve \
+              -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
+              -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
+              -var ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
+              -var ARM_TENANT_ID=$ARM_TENANT_ID'
         }
       }
     }
