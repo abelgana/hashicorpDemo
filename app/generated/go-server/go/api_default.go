@@ -34,7 +34,7 @@ func PersonDelete(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	params := mux.Vars(r)
 	var person Person
-	LocalDB.First(&person, params["id"])
+	LocalDB.First(&person, params["uuid"])
 	LocalDB.Delete(&person)
 
 	json.NewEncoder(w).Encode(&person)
@@ -45,7 +45,7 @@ func PersonGet(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	params := mux.Vars(r)
 	var person Person
-	LocalDB.First(&person, params["id"])
+	LocalDB.First(&person, params["uuid"])
 	json.NewEncoder(w).Encode(&person)
 	w.WriteHeader(http.StatusOK)
 }
