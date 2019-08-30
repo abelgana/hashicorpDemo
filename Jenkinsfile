@@ -16,7 +16,7 @@ pipeline {
   }
 
   stages {
-    stage('Application Build and Test') {
+    stage('Application Packaging') {
       agent {
         docker {
           image 'gcr.io/cloud-builders/bazel'
@@ -29,11 +29,17 @@ pipeline {
       input {
         message "Package applicaiton?"
         id "PACKAGE"
-        parameters { booleanParam(name: 'PACKAGE', defaultValue: false, description: '') }
+        parameters {
+          booleanParam(
+            name: 'PACKAGE',
+            defaultValue: false,
+            description: 'If set the application will be packaged.'
+          )
+        }
       }
       steps {
         dir("app") {
-          echo 'Building....'
+          echo 'Packaging....'
           sh 'tag=$(git rev-parse HEAD:app) && \
               bazel build generated/go-server:push_go_server_image \
               --define tag=${tag} \
@@ -70,16 +76,22 @@ pipeline {
         }
         stage('Infrastructure Provisioning') {
           when {
-            environment name: 'DEPLOY', value: 'true'
+            environment name: 'PROVISION', value: 'true'
           }
           input {
-            message "Deploy to production?"
-            id "DEPLOY"
-            parameters { booleanParam(name: 'DEPLOY', defaultValue: false, description: '') }
+            message "Provision to production?"
+            id "PROVISION"
+            parameters {
+              booleanParam(
+                name: 'PROVISION',
+                defaultValue: false,
+                description: 'If set the provided plan will be executed.'
+              )
+            }
           }
           steps {
             dir ('infra') {
-              echo 'provisioning....'
+              echo 'Provisioning....'
               sh 'terraform apply plan'
             }
           }
@@ -87,13 +99,25 @@ pipeline {
       }
     }
     stage('Infrastructure Destruction') {
+      agent {
+        docker {
+          image 'abelgana/terraformbuilder:1.0.1'
+          args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
+        }
+      }
       when {
         environment name: 'DESTROY', value: 'true'
       }
       input {
         message "Destroy to production?"
         id "DESTROY"
-        parameters { booleanParam(name: 'DESTROY', defaultValue: false, description: '') }
+        parameters {
+          booleanParam(
+            name: 'DESTROY',
+            defaultValue: false,
+            description: 'If set the infrstracture will be destroyed.'
+          )
+        }
       }
       steps {
         dir ('infra') {

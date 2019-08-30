@@ -10,13 +10,6 @@ provider "helm" {
   }
 }
 
-provider "kubernetes" {
-  host                   = "${var.host}"
-  client_certificate     = "${base64decode(var.client_certificate)}"
-  client_key             = "${base64decode(var.client_key)}"
-  cluster_ca_certificate = "${base64decode(var.cluster_ca_certificate)}"
-}
-
 data "helm_repository" "svc_cat" {
   name = "svc-cat"
   url  = "https://svc-catalog-charts.storage.googleapis.com"
@@ -92,7 +85,24 @@ resource "null_resource" "delay" {
   provisioner "local-exec" {
     command = "sleep 60"
   }
+
   triggers = {
     "before" = "${helm_release.catalog.id}"
   }
+}
+
+resource "null_resource" "delay2" {
+  provisioner "local-exec" {
+    command = "sleep 60"
+  }
+
+  depends_on = [helm_release.osba]
+}
+
+resource "helm_release" "postgres_chart" {
+  name       = "postgres"
+  chart      = "./postgres/postgres-chart"
+  timeout    = 12000
+
+  depends_on = [null_resource.delay2]
 }

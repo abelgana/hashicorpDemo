@@ -13,7 +13,7 @@ swagger-gen:
 	$(SWAGGER) generate -i app/swagger/swagger.yml -l go-server -o app/generated/go-server
 
 build-docker:
-	cd app; bazel build generated/go-server:push_go_server_image --define tag=$(tag) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 && bazel-bin/cmd/titanic-server/push_titanic
+	cd app; bazel build generated/go-server:push_go_server_image --define tag=$(tag) --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 && bazel-bin/generated/go-server/push_go_server_image
 
 build-binary:
 	cd app; bazel build generated/go-server:go-server
