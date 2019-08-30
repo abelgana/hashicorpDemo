@@ -3,20 +3,20 @@ kind: Deployment
 metadata:
   name: hashicorp-demo
   labels:
-    app: demo
+    app: hashicorp-demo
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: demo
+      app: hashicorp-demo
   template:
     metadata:
       labels:
-        app: demo
+        app: hashicorp-demo
     spec:
       containers:
       - name: server
-        image: abelgana/go_server_image:007e9fd2f87148c3e9f49d09af221f5de2dc1b0d
+        image: abelgana/go_server_image:${TAG}
         ports:
         - containerPort: 80
         env:
@@ -45,3 +45,32 @@ spec:
               secretKeyRef:
                 name: example-postgresql-all-in-one-secret
                 key: username
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hashicorp-demo
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    app: hashicorp-demo
+  type: ClusterIP
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: hashicorp-demo
+  annotations:
+    kubernetes.io/ingress.class: addon-http-application-routing
+spec:
+  rules:
+  - host: hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE}
+    http:
+      paths:
+      - backend:
+          serviceName: hashicorp-demo
+          servicePort: 80
+        path: /

@@ -14,3 +14,8 @@ RUN apk add --update \
     pip install awscli --upgrade --user && \
     apk --purge -v del py-pip && \
     rm -rf /var/cache/apk/*
+
+RUN wget https://storage.googleapis.com/kubernetes-release/release/v1.13.10/bin/linux/amd64/kubectl \
+    -P /usr/local/bin && \
+    chmod +x /usr/local/bin/kubectl && \
+    apk add py-pip gettext

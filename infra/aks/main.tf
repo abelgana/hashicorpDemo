@@ -15,6 +15,12 @@ resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
   resource_group_name = "${azurerm_resource_group.hashicorp_demo.name}"
   dns_prefix          = "${var.prefix}-hashicorp-demo"
 
+  addon_profile {
+    http_application_routing {
+      enabled = "true"
+    }
+  }
+
   agent_pool_profile {
     name            = "default"
     count           = 1

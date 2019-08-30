@@ -55,7 +55,7 @@ pipeline {
     stage('Infrastructure') {
       agent {
         docker {
-          image 'abelgana/terraformbuilder:1.0.1'
+          image 'abelgana/terraformbuilder:2.0.2'
           args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
       }
@@ -92,16 +92,50 @@ pipeline {
           steps {
             dir ('infra') {
               echo 'Provisioning....'
-              sh 'terraform apply plan'
+              sh 'terraform apply plan && \
+                  terraform output kube_config > ../kube_config'
+            }
+          }
+        }
+        stage('Get kube_config') {
+          steps {
+            dir ('infra') {
+              sh 'terraform output kube_config > ../kube_config'
             }
           }
         }
       }
     }
+    stage('Deploy app') {
+      agent {
+        docker {
+          image 'abelgana/terraformbuilder:2.0.2'
+          args '--entrypoint=\'\''
+        }
+      }
+      steps {
+        echo 'Deploying....'
+        retry(100) {
+          sh'kubectl --kubeconfig=kube_config get secret example-postgresql-all-in-one-secret && \
+          sleep 30'
+        }
+        sh 'export TAG=$(git rev-parse HEAD:app) && \
+            az login \
+              --service-principal \
+              --username ${ARM_CLIENT_ID} \
+              --password ${ARM_CLIENT_SECRET} \
+              --tenant ${ARM_TENANT_ID} &&\
+            export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
+            echo Application public URL: &&\
+            echo $CLUSTER_SPECIFIC_DNS_ZONE && \
+            envsubst < app/deployment/deployment.yaml | \
+            kubectl --kubeconfig=kube_config apply -f -'
+      }
+    }
     stage('Infrastructure Destruction') {
       agent {
         docker {
-          image 'abelgana/terraformbuilder:1.0.1'
+          image 'abelgana/terraformbuilder:2.0.2'
           args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
       }
