@@ -10,6 +10,15 @@ provider "helm" {
   }
 }
 
+provider "azurerm" {
+  version = "=1.28.0"
+}
+
+resource "azurerm_resource_group" "hashicorp_demo_postgres" {
+  name     = "hashicorp-demo-postgres"
+  location = "eastus"
+}
+
 data "helm_repository" "svc_cat" {
   name = "svc-cat"
   url  = "https://svc-catalog-charts.storage.googleapis.com"
@@ -104,5 +113,5 @@ resource "helm_release" "postgres_chart" {
   chart      = "./postgres/postgres-chart"
   timeout    = 12000
 
-  depends_on = [null_resource.delay2]
+  depends_on = [null_resource.delay2, azurerm_resource_group.hashicorp_demo_postgres]
 }

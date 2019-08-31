@@ -23,27 +23,27 @@ spec:
           - name: DB_DATABASE
             valueFrom:
               secretKeyRef:
-                name: example-postgresql-all-in-one-secret
+                name: hashicorp-demo-postgres-secret
                 key: database
           - name: DB_HOST
             valueFrom:
               secretKeyRef:
-                name: example-postgresql-all-in-one-secret
+                name: hashicorp-demo-postgres-secret
                 key: host
           - name: DB_PASSWORD
             valueFrom:
               secretKeyRef:
-                name: example-postgresql-all-in-one-secret
+                name: hashicorp-demo-postgres-secret
                 key: password
           - name: DB_PORT
             valueFrom:
               secretKeyRef:
-                name: example-postgresql-all-in-one-secret
+                name: hashicorp-demo-postgres-secret
                 key: port
           - name: DB_USERNAME
             valueFrom:
               secretKeyRef:
-                name: example-postgresql-all-in-one-secret
+                name: hashicorp-demo-postgres-secret
                 key: username
 ---
 apiVersion: v1

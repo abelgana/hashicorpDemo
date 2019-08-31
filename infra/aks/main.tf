@@ -24,9 +24,9 @@ resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
   agent_pool_profile {
     name            = "default"
     count           = 1
-    vm_size         = "Standard_D1_v2"
+    vm_size         = "Standard_F4s_v2"
     os_type         = "Linux"
-    os_disk_size_gb = 30
+    os_disk_size_gb = 100
   }
 
   service_principal {
