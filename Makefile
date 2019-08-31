@@ -22,15 +22,10 @@ run:
 	bazel-bin/generated/go-server/darwin_amd64_stripped/go-server
 
 infra:
-	cd infra; terraform init infra
-	cd infra; terraform plan -out plan
-	cd infra; terraform apply infra
+	cd infra; terraform init
+	cd infra; terraform plan -var ARM_CLIENT_ID=${ARM_CLIENT_ID} -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} -var ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} -var ARM_TENANT_ID=${ARM_TENANT_ID} -out plan
+	cd infra; terraform apply plan
 	cd infra; terraform output kube_config > ~/.kube/config
 
-helm_init:
-	kubectl -n kube-system create sa tiller
-	kubectl create clusterrolebinding tiller --clusterrole cluster-admin --serviceaccount=kube-system:tiller
-	helm init --service-account tiller --upgrade
-
-deploy_ingress:
-	helm install --name ingress stable/nginx-ingress --namespace kube-system --set controller.replicaCount=2
+destroy:
+	cd infra; terraform destroy -var ARM_CLIENT_ID=${ARM_CLIENT_ID} -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} -var ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} -var ARM_TENANT_ID=${ARM_TENANT_ID}

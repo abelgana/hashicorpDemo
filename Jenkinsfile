@@ -1,3 +1,5 @@
+terraformBuilder = 'abelgana/terraformbuilder:2.0.3'
+
 pipeline {
   agent any
 
@@ -13,6 +15,10 @@ pipeline {
     AWS_ACCESS_KEY_ID = credentials('AWS_ACCESS_KEY_ID')
     AWS_SECRET_ACCESS_KEY = credentials ('AWS_SECRET_ACCESS_KEY')
     DOCKER_HUB_CREDS = credentials('DOCKER_HUB_CREDS')
+    ARM_CRED = '-var ARM_CLIENT_ID=${ARM_CLIENT_ID} \
+                -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
+                -var ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
+                -var ARM_TENANT_ID=${ARM_TENANT_ID}'
   }
 
   stages {
@@ -42,12 +48,12 @@ pipeline {
           echo 'Packaging....'
           sh 'tag=$(git rev-parse HEAD:app) && \
               bazel build generated/go-server:push_go_server_image \
-              --define tag=${tag} \
-              --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
-              --host_force_python=PY2 && \
+                --define tag=${tag} \
+                --platforms=@io_bazel_rules_go//go/toolchain:linux_amd64 \
+                --host_force_python=PY2 && \
               docker login \
-                  -u ${DOCKER_HUB_CREDS_USR} \
-                  -p ${DOCKER_HUB_CREDS_PSW} && \
+                -u ${DOCKER_HUB_CREDS_USR} \
+                -p ${DOCKER_HUB_CREDS_PSW} && \
               bazel-bin/generated/go-server/push_go_server_image'
         }
       }
@@ -55,7 +61,7 @@ pipeline {
     stage('Infrastructure') {
       agent {
         docker {
-          image 'abelgana/terraformbuilder:2.0.2'
+          image terraformBuilder
           args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
       }
@@ -65,12 +71,7 @@ pipeline {
             dir ('infra') {
               echo 'Planning....'
               sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
-              sh 'terraform plan \
-                  -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
-                  -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
-                  -var ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
-                  -var ARM_TENANT_ID=$ARM_TENANT_ID \
-                  -out=plan'
+              sh 'terraform plan ${ARM_CRED} -out=plan'
             }
           }
         }
@@ -92,8 +93,7 @@ pipeline {
           steps {
             dir ('infra') {
               echo 'Provisioning....'
-              sh 'terraform apply plan && \
-                  terraform output kube_config > ../kube_config'
+              sh 'terraform apply plan'
             }
           }
         }
@@ -109,15 +109,15 @@ pipeline {
     stage('Deploy app') {
       agent {
         docker {
-          image 'abelgana/terraformbuilder:2.0.2'
+          image terraformBuilder
           args '--entrypoint=\'\''
         }
       }
       steps {
         echo 'Deploying....'
         retry(100) {
-          sh'kubectl --kubeconfig=kube_config get secret example-postgresql-all-in-one-secret && \
-          sleep 30'
+          sh'sleep 30 && \
+          kubectl --kubeconfig=kube_config get secret example-postgresql-all-in-one-secret'
         }
         sh 'export TAG=$(git rev-parse HEAD:app) && \
             az login \
@@ -126,16 +126,14 @@ pipeline {
               --password ${ARM_CLIENT_SECRET} \
               --tenant ${ARM_TENANT_ID} &&\
             export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
-            echo Application public URL: &&\
-            echo $CLUSTER_SPECIFIC_DNS_ZONE && \
-            envsubst < app/deployment/deployment.yaml | \
-            kubectl --kubeconfig=kube_config apply -f -'
+            echo Application public URL: hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
+            envsubst < app/deployment/deployment.yaml | kubectl --kubeconfig=kube_config apply -f -'
       }
     }
     stage('Infrastructure Destruction') {
       agent {
         docker {
-          image 'abelgana/terraformbuilder:2.0.2'
+          image terraformBuilder
           args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
         }
       }
@@ -157,11 +155,7 @@ pipeline {
         dir ('infra') {
           echo 'destroying....'
           sh 'terraform init -backend-config workspace_key_prefix=$JOB_NAME'
-          sh 'terraform destroy -auto-approve \
-              -var ARM_CLIENT_ID=$ARM_CLIENT_ID \
-              -var ARM_CLIENT_SECRET=$ARM_CLIENT_SECRET \
-              -var ARM_SUBSCRIPTION_ID=$ARM_SUBSCRIPTION_ID \
-              -var ARM_TENANT_ID=$ARM_TENANT_ID'
+          sh 'terraform destroy -auto-approve ${ARM_CRED}'
         }
       }
     }

@@ -35,6 +35,6 @@ resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
   }
 
   tags = {
-    Environment = "Dev"
+    Environment = "${var.prefix}"
   }
 }
