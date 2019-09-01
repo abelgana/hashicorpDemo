@@ -16,7 +16,7 @@ provider "azurerm" {
 
 resource "azurerm_resource_group" "hashicorp_demo_postgres" {
   name     = "hashicorp-demo-postgres"
-  location = "eastus"
+  location = "East US 2"
 }
 
 data "helm_repository" "svc_cat" {

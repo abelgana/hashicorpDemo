@@ -5,7 +5,7 @@ variable "prefix" {
 
 variable "region" {
   description = "Azure region to deploy to."
-  default = "West US"
+  default = "East US 2"
 }
 
 variable "ARM_CLIENT_SECRET"{

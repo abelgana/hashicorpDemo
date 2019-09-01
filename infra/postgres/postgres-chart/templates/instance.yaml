@@ -7,7 +7,7 @@ spec:
   clusterServiceClassExternalName: azure-postgresql-9-6
   clusterServicePlanExternalName: basic
   parameters:
-    location: eastus
+    location: eastus2
     resourceGroup: hashicorp-demo-postgres
     extensions:
     - uuid-ossp
