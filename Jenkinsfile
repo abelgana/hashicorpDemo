@@ -94,6 +94,14 @@ pipeline {
             dir ('infra') {
               echo 'Provisioning....'
               sh 'terraform apply plan'
+              timeout(time: 20, unit: 'MINUTES') {
+                try {
+                  sh 'kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret'
+                } catch(error) {
+                  sh 'sleep 60'
+                }
+              }
+
             }
           }
         }
@@ -104,64 +112,52 @@ pipeline {
             }
           }
         }
-      }
-    }
-    stage('Deploy app') {
-      agent {
-        docker {
-          image terraformBuilder
-          args '--entrypoint=\'\''
+        stage('Deploy app') {
+          steps {
+            echo 'Deploying....'
+            sh 'export TAG=$(git rev-parse HEAD:app) && \
+                az login \
+                  --service-principal \
+                  --username ${ARM_CLIENT_ID} \
+                  --password ${ARM_CLIENT_SECRET} \
+                  --tenant ${ARM_TENANT_ID} &&\
+                export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
+                echo Application public URL: hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
+                envsubst < app/deployment/deployment.yaml | kubectl --kubeconfig=kube_config apply -f -'
+          }
         }
-      }
-      steps {
-        echo 'Deploying....'
-        retry(100) {
-          sh'sleep 30 && \
-          kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret'
+        stage('Infrastructure Destruction') {
+          agent {
+            docker {
+              image terraformBuilder
+              args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
+            }
+          }
+          when {
+            environment name: 'DESTROY', value: 'true'
+          }
+          input {
+            message "Destroy to production?"
+            id "DESTROY"
+            parameters {
+              booleanParam(
+                name: 'DESTROY',
+                defaultValue: false,
+                description: 'If set the infrstracture will be destroyed.'
+              )
+            }
+          }
+          steps {
+            dir ('infra') {
+              echo 'destroying....'
+              sh 'terraform init -backend-config workspace_key_prefix=${JOB_NAME}'
+              sh 'terraform destroy -auto-approve \
+                    -var ARM_CLIENT_ID=${ARM_CLIENT_ID} \
+                    -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
+                    -var ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
+                    -var ARM_TENANT_ID=${ARM_TENANT_ID}'
+            }
+          }
         }
-        sh 'export TAG=$(git rev-parse HEAD:app) && \
-            az login \
-              --service-principal \
-              --username ${ARM_CLIENT_ID} \
-              --password ${ARM_CLIENT_SECRET} \
-              --tenant ${ARM_TENANT_ID} &&\
-            export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
-            echo Application public URL: hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
-            envsubst < app/deployment/deployment.yaml | kubectl --kubeconfig=kube_config apply -f -'
-      }
-    }
-    stage('Infrastructure Destruction') {
-      agent {
-        docker {
-          image terraformBuilder
-          args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
-        }
-      }
-      when {
-        environment name: 'DESTROY', value: 'true'
-      }
-      input {
-        message "Destroy to production?"
-        id "DESTROY"
-        parameters {
-          booleanParam(
-            name: 'DESTROY',
-            defaultValue: false,
-            description: 'If set the infrstracture will be destroyed.'
-          )
-        }
-      }
-      steps {
-        dir ('infra') {
-          echo 'destroying....'
-          sh 'terraform init -backend-config workspace_key_prefix=${JOB_NAME}'
-          sh 'terraform destroy -auto-approve \
-                -var ARM_CLIENT_ID=${ARM_CLIENT_ID} \
-                -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
-                -var ARM_SUBSCRIPTION_ID=${ARM_SUBSCRIPTION_ID} \
-                -var ARM_TENANT_ID=${ARM_TENANT_ID}'
-        }
-      }
-    }
   }
 }
