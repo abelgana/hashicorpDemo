@@ -22,6 +22,9 @@ app/bazel.iml
 app/output/
 infra/.terraform
 infra/plan
+kube_config
+
+tools
 
 plan
 

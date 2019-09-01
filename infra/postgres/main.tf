@@ -94,7 +94,7 @@ resource "helm_release" "osba" {
 
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 120"
+    command = "sleep 180"
   }
 
   triggers = {
@@ -104,7 +104,7 @@ resource "null_resource" "delay" {
 
 resource "null_resource" "delay2" {
   provisioner "local-exec" {
-    command = "sleep 120"
+    command = "sleep 60"
   }
 
   depends_on = [helm_release.osba]

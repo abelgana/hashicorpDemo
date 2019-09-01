@@ -119,6 +119,16 @@ pipeline {
                 export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
                 echo Application public URL: http://hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
                 envsubst < app/deployment/deployment.yaml | kubectl --kubeconfig=kube_config apply -f -'
+            retry(20){
+              sh(returnStdout: true, script: '''#!/bin/bash
+                export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv)
+                if wget -T 15 -c http://hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE}/people/1;then
+                echo Application is ready
+                else
+                sleep 60; exit 1
+                fi
+              '''.stripIndent())
+            }
           }
         }
         stage('Infrastructure Destruction') {
