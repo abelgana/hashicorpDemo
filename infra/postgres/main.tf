@@ -28,6 +28,7 @@ resource "helm_release" "catalog" {
   name       = "catalog"
   repository = "${data.helm_repository.svc_cat.metadata.0.name}"
   chart      = "catalog"
+  wait       = "true"
 
   set {
     name  = "apiserver.storage.etcd.persistence.enabled"
@@ -65,6 +66,7 @@ resource "helm_release" "osba" {
   repository = "${data.helm_repository.azure.metadata.0.name}"
   chart      = "open-service-broker-azure"
   namespace  = "osba"
+  wait       = "true"
 
   set_sensitive {
     name  = "azure.subscriptionId"
@@ -92,7 +94,7 @@ resource "helm_release" "osba" {
 
 resource "null_resource" "delay" {
   provisioner "local-exec" {
-    command = "sleep 60"
+    command = "sleep 120"
   }
 
   triggers = {
@@ -102,7 +104,7 @@ resource "null_resource" "delay" {
 
 resource "null_resource" "delay2" {
   provisioner "local-exec" {
-    command = "sleep 60"
+    command = "sleep 120"
   }
 
   depends_on = [helm_release.osba]
@@ -112,6 +114,7 @@ resource "helm_release" "postgres_chart" {
   name       = "postgres"
   chart      = "./postgres/postgres-chart"
   timeout    = 12000
+  wait       = "true"
 
   depends_on = [null_resource.delay2]
 }

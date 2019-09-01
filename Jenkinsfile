@@ -94,21 +94,16 @@ pipeline {
             dir ('infra') {
               echo 'Provisioning....'
               sh 'terraform apply plan'
-              timeout(time: 20, unit: 'MINUTES') {
-                sh 'if kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret; then \
-                      echo Postgress server was created \
-                    else \
-                      echo retry in one minute \
-                      sleep 60 \
-                    fi'
-              }
-            }
-          }
-        }
-        stage('Get kube_config') {
-          steps {
-            dir ('infra') {
               sh 'terraform output kube_config > ../kube_config'
+            }
+            retry(20){
+              sh(returnStdout: true, script: '''#!/bin/bash
+                if kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret;then
+                echo Postgress server was created
+                else
+                sleep 60; exit 1
+                fi
+              '''.stripIndent())
             }
           }
         }
@@ -122,17 +117,11 @@ pipeline {
                   --password ${ARM_CLIENT_SECRET} \
                   --tenant ${ARM_TENANT_ID} &&\
                 export CLUSTER_SPECIFIC_DNS_ZONE=$(az aks show --resource-group Dev-aks-hashicorp-demo --query addonProfiles.httpApplicationRouting.config.HTTPApplicationRoutingZoneName -n Dev-aks-hashicorp-demo -o tsv) && \
-                echo Application public URL: hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
+                echo Application public URL: http://hashicorp-demo.${CLUSTER_SPECIFIC_DNS_ZONE} && \
                 envsubst < app/deployment/deployment.yaml | kubectl --kubeconfig=kube_config apply -f -'
           }
         }
         stage('Infrastructure Destruction') {
-          agent {
-            docker {
-              image terraformBuilder
-              args '-e TF_IN_AUTOMATION=1 --entrypoint=\'\''
-            }
-          }
           when {
             environment name: 'DESTROY', value: 'true'
           }
@@ -150,7 +139,6 @@ pipeline {
           steps {
             dir ('infra') {
               echo 'destroying....'
-              sh 'terraform init -backend-config workspace_key_prefix=${JOB_NAME}'
               sh 'terraform destroy -auto-approve \
                     -var ARM_CLIENT_ID=${ARM_CLIENT_ID} \
                     -var ARM_CLIENT_SECRET=${ARM_CLIENT_SECRET} \
