@@ -95,13 +95,13 @@ pipeline {
               echo 'Provisioning....'
               sh 'terraform apply plan'
               timeout(time: 20, unit: 'MINUTES') {
-                try {
-                  sh 'kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret'
-                } catch(error) {
-                  sh 'sleep 60'
-                }
+                sh 'if kubectl --kubeconfig=kube_config get secret hashicorp-demo-postgres-secret; then \
+                      echo Postgress server was created \
+                    else \
+                      echo retry in one minute \
+                      sleep 60 \
+                    fi'
               }
-
             }
           }
         }
@@ -159,5 +159,7 @@ pipeline {
             }
           }
         }
+      }
+    }
   }
 }

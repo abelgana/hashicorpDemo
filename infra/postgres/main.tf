@@ -113,5 +113,5 @@ resource "helm_release" "postgres_chart" {
   chart      = "./postgres/postgres-chart"
   timeout    = 12000
 
-  depends_on = [null_resource.delay2, azurerm_resource_group.hashicorp_demo_postgres]
+  depends_on = [null_resource.delay2]
 }
