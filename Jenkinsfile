@@ -25,20 +25,20 @@ pipeline {
           args '--entrypoint=\'\''
         }
       }
-//      when {
-//        environment name: 'PACKAGE', value: 'true'
-//      }
-//      input {
-//        message "Package applicaiton?"
-//        id "PACKAGE"
-//        parameters {
-//          booleanParam(
-//            name: 'PACKAGE',
-//            defaultValue: false,
-//            description: 'If set the application will be packaged.'
-//          )
-//        }
-//      }
+      when {
+        environment name: 'PACKAGE', value: 'true'
+      }
+      input {
+        message "Package applicaiton?"
+        id "PACKAGE"
+        parameters {
+          booleanParam(
+            name: 'PACKAGE',
+            defaultValue: false,
+            description: 'If set the application will be packaged.'
+          )
+        }
+      }
       steps {
         dir("app") {
           echo 'Packaging....'
@@ -76,20 +76,20 @@ pipeline {
           }
         }
         stage('Infrastructure Provisioning') {
-//          when {
-//            environment name: 'PROVISION', value: 'true'
-//          }
-//          input {
-//            message "Provision to production?"
-//            id "PROVISION"
-//            parameters {
-//              booleanParam(
-//                name: 'PROVISION',
-//                defaultValue: false,
-//                description: 'If set the provided plan will be executed.'
-//              )
-//            }
-//          }
+          when {
+            environment name: 'PROVISION', value: 'true'
+          }
+          input {
+            message "Provision to production?"
+            id "PROVISION"
+            parameters {
+              booleanParam(
+                name: 'PROVISION',
+                defaultValue: false,
+                description: 'If set the provided plan will be executed.'
+              )
+            }
+          }
           steps {
             dir ('infra') {
               echo 'Provisioning....'
@@ -132,20 +132,20 @@ pipeline {
           }
         }
         stage('Infrastructure Destruction') {
-//          when {
-//            environment name: 'DESTROY', value: 'true'
-//          }
-//          input {
-//            message "Destroy to production?"
-//            id "DESTROY"
-//            parameters {
-//              booleanParam(
-//                name: 'DESTROY',
-//                defaultValue: false,
-//                description: 'If set the infrstracture will be destroyed.'
-//              )
-//            }
-//          }
+          when {
+            environment name: 'DESTROY', value: 'true'
+          }
+          input {
+            message "Destroy to production?"
+            id "DESTROY"
+            parameters {
+              booleanParam(
+                name: 'DESTROY',
+                defaultValue: false,
+                description: 'If set the infrstracture will be destroyed.'
+              )
+            }
+          }
           steps {
             dir ('infra') {
               echo 'destroying....'
