@@ -132,20 +132,20 @@ pipeline {
           }
         }
         stage('Infrastructure Destruction') {
-//          when {
-//            environment name: 'DESTROY', value: 'true'
-//          }
-//          input {
-//            message "Destroy to production?"
-//            id "DESTROY"
-//            parameters {
-//              booleanParam(
-//                name: 'DESTROY',
-//                defaultValue: false,
-//                description: 'If set the infrstracture will be destroyed.'
-//              )
-//            }
-//          }
+          when {
+            environment name: 'DESTROY', value: 'true'
+          }
+          input {
+            message "Destroy to production?"
+            id "DESTROY"
+            parameters {
+              booleanParam(
+                name: 'DESTROY',
+                defaultValue: false,
+                description: 'If set the infrstracture will be destroyed.'
+              )
+            }
+          }
           steps {
             dir ('infra') {
               echo 'destroying....'
