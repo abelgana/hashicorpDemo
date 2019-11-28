@@ -1,18 +1,17 @@
 # Specify azure provider
 provider "azurerm" {
-  version = "=1.28.0"
 }
 
 # Create Azure resource group.
 resource "azurerm_resource_group" "hashicorp_demo" {
   name     = "${var.prefix}-aks-hashicorp-demo"
-  location = "${var.region}"
+  location = var.region
 }
 
 resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
   name                = "${var.prefix}-aks-hashicorp-demo"
-  location            = "${azurerm_resource_group.hashicorp_demo.location}"
-  resource_group_name = "${azurerm_resource_group.hashicorp_demo.name}"
+  location            = azurerm_resource_group.hashicorp_demo.location
+  resource_group_name = azurerm_resource_group.hashicorp_demo.name
   dns_prefix          = "${var.prefix}-hashicorp-demo"
 
   addon_profile {
@@ -30,11 +29,11 @@ resource "azurerm_kubernetes_cluster" "hashicorp_demo" {
   }
 
   service_principal {
-    client_id     = "${var.ARM_CLIENT_ID}"
-    client_secret = "${var.ARM_CLIENT_SECRET}"
+    client_id     = var.ARM_CLIENT_ID
+    client_secret = var.ARM_CLIENT_SECRET
   }
 
   tags = {
-    Environment = "${var.prefix}"
+    Environment = var.prefix
   }
 }
