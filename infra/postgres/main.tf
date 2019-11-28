@@ -18,14 +18,9 @@ resource "azurerm_resource_group" "hashicorp_demo_postgres" {
   location = "East US 2"
 }
 
-data "helm_repository" "svc_cat" {
-  name = "svc-cat"
-  url  = "https://svc-catalog-charts.storage.googleapis.com"
-}
-
 resource "helm_release" "catalog" {
   name       = "catalog"
-  repository = data.helm_repository.svc_cat.metadata.0.name
+  repository = "https://svc-catalog-charts.storage.googleapis.com"
   chart      = "catalog"
   wait       = "true"
 
@@ -55,14 +50,9 @@ resource "helm_release" "catalog" {
   }
 }
 
-data "helm_repository" "azure" {
-  name = "azure"
-  url  = "https://kubernetescharts.blob.core.windows.net/azure"
-}
-
 resource "helm_release" "osba" {
   name       = "osba"
-  repository = data.helm_repository.azure.metadata.0.name
+  repository = "https://kubernetescharts.blob.core.windows.net/azure"
   chart      = "open-service-broker-azure"
   namespace  = "osba"
   wait       = "true"
